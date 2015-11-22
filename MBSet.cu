@@ -1,11 +1,11 @@
-/* 
+/*
  * File:   MBSet.cu
- * 
+ *
  * Created on June 24, 2012
- * 
+ *
  * Purpose:  This program displays Mandelbrot set using the GPU via CUDA and
  * OpenGL immediate mode.
- * 
+ *
  */
 
 #include <iostream>
@@ -44,20 +44,20 @@ public:
 
 RGB* colors = 0; // Array of color values
 
-void InitializeColors()
+void InitializeColors(void)
 {
   colors = new RGB[maxIt + 1];
   for (int i = 0; i < maxIt; ++i)
-    {
-      if (i < 5)
-        { // Try this.. just white for small it counts
-          colors[i] = RGB(1, 1, 1);
-        }
-      else
-        {
-          colors[i] = RGB(drand48(), drand48(), drand48());
-        }
+  {
+    if (i < 5)
+    { // Try this.. just white for small it counts
+      colors[i] = RGB(1, 1, 1);
     }
+    else
+    {
+      colors[i] = RGB(drand48(), drand48(), drand48());
+    }
+  }
   colors[maxIt] = RGB(); // black
 }
 
@@ -73,5 +73,5 @@ int main(int argc, char** argv)
   InitializeColors();
   glutMainLoop(); // THis will callback the display, keyboard and mouse
   return 0;
-  
+
 }
