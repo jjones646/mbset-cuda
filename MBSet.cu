@@ -28,6 +28,20 @@ Complex* dev_minC;
 Complex* dev_maxC;
 const int maxIt = 2000; // Msximum Iterations
 
+// Define the RGB Class
+class RGB
+{
+public:
+  RGB()
+    : r(0), g(0), b(0) {}
+  RGB(double r0, double g0, double b0)
+    : r(r0), g(g0), b(b0) {}
+public:
+  double r;
+  double g;
+  double b;
+};
+
 RGB* colors = 0; // Array of color values
 
 void InitializeColors()

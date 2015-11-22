@@ -1,3 +1,4 @@
 Makefile
 HelloCuda
 MBSet
+*.o
