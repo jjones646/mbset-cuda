@@ -1,4 +1,4 @@
-CC=/usr/local/cuda-6.5/bin/nvcc
+CC=/usr/local/cuda/bin/nvcc
 LIBS= -lglut -lGL -lGLU
 INCLUDES=-I./  
 CCFLAGS= 
