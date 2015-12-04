@@ -62,13 +62,13 @@ __global__ void add(int* a, int* b, int* c)
   c[index] = a[index] + b[index];
   unsigned int i = 0;
 
-  Complex Z_n(0,0);
+  Complex Z_n(0, 0);
 
   // itterate over the set
   for (; i < 2000; ++i) {
-   // if (Z_n > 2.0) {
-      // not in the mb
-   // }
+    // if (Z_n > 2.0) {
+    // not in the mb
+    // }
   }
 
   if (i < 1999) {
@@ -204,6 +204,12 @@ int main(int argc, char** argv)
   float realStep = (maxC.r - minC.r) / WINDOW_DIM;
   float imagStep = (maxC.i - minC.i) / WINDOW_DIM;
 
+  // Allocate space for device copies of complex array
+  cudaMalloc((void**)&dev_C, size);
+
+  // Allocate memory for the host complex array
+  host_C = (Complex*)malloc(size);
+
   // initialize the complex number for each pixel
   for (size_t i = 0; i < WINDOW_DIM; ++i) {
     size_t row_id = WINDOW_DIM * i;
@@ -217,12 +223,6 @@ int main(int argc, char** argv)
 
     cout << endl;
   }
-
-  // Allocate space for device copies of complex array
-  cudaMalloc((void**)&dev_C, size);
-
-  // Allocate memory for the host complex array
-  host_C = (Complex*)malloc(size);
 
   // InitializeColors();
   // This will callback the display, keyboard and mouse
