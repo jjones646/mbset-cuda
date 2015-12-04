@@ -1,16 +1,17 @@
 /*
  * File:   MBSet.cu
  *
- * Created on November 22, 2015
+ * Created on December 4, 2015
  *
  * Purpose:  This program displays Mandelbrot set using the GPU via CUDA and
  * OpenGL immediate mode.
+ * 
+ * Jonathan Jones
  *
  */
 
 #include <iostream>
 #include <string>
-#include <sstream>
 #include <stack>
 #include <stdio.h>
 
