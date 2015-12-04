@@ -60,22 +60,20 @@ __global__ void mb_pix(Complex* cc, unsigned int* rr)
 {
   int index = threadIdx.x + blockIdx.x * blockDim.x;
   unsigned int i = 0;
-  Complex Z_n(cc[index]);
+  Complex Z_init(cc[index]);
+  Complex Z_prev(Z_n);
+  Complex Z_nxt;
 
   // itterate over the set
   for (; i < 2000; ++i) {
-    Z_n = a;
+    Z_nxt = (Z_prev * Z_prev) + Z_init;
 
-    if (Z_n.magnitude2() > 2.0) break;
+    if (Z_nxt.magnitude2() > 2.0) break;
+
+    Z_prev = Z_nxt;
   }
 
   rr[index] = i;
-
-  // if (i < 1999) {
-  //   // part of the mb
-  // } else {
-  //   // not part of the mb
-  // }
 }
 
 void InitializeColors(void)
@@ -216,7 +214,7 @@ int main(int argc, char** argv)
   host_C = (Complex*)malloc(size_C);
   host_r = (unsigned int*)malloc(size_r);
 
-           // initialize the complex number for each pixel
+  // initialize the complex number for each pixel
   for (size_t i = 0; i < WINDOW_DIM; ++i) {
     size_t row_id = WINDOW_DIM * i;
 
@@ -233,7 +231,7 @@ int main(int argc, char** argv)
   // Copy inputs to device
   cudaMemcpy(dev_C, &host_C, size_C, cudaMemcpyHostToDevice);
   // Launch mb_pix() kernel on GPU
-  mb_pix <<<1, 1>>>(dev_C, dev_r);
+  mb_pix <<< WINDOW_DIM , WINDOW_DIM>>> (dev_C, dev_r);
   // Copy result back to host
   cudaMemcpy(&host_r, dev_r, size_r, cudaMemcpyDeviceToHost);
   // Cleanup
