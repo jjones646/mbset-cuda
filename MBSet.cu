@@ -73,7 +73,6 @@ __global__ void mb_pix(Complex* cc, unsigned int* rr)
 void InitializeColors(void)
 {
   colors = new RGB[MAX_IT + 1];
-
   for (size_t i = 0; i < MAX_IT; ++i) {
     if (i < 5)
       colors[i] = RGB(1, 1, 1);
@@ -144,6 +143,18 @@ void DisplayCB(void)
 
   glEnd();  // done drawing
   glutSwapBuffers();  // for double buffering
+}
+
+void Init(void)
+{
+  glViewport(0, 0, WINDOW_DIM, WINDOW_DIM);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  InitializeColors();
 }
 
 
