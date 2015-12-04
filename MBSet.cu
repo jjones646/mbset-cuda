@@ -218,10 +218,10 @@ int main(int argc, char** argv)
       size_t ii = row_id + j;
 
       host_C[ii] = Complex(minC.r + (j * realStep), minC.i + (i * imagStep));
-      cout << host_C[ii].r << "" << host_C[ii].i << " ";
+      cout << "(" << host_C[ii].r << "," << host_C[ii].i << ")  ";
     }
 
-    cout << endl;
+    cout << endl << endl << endl << endl;
   }
 
   // InitializeColors();
