@@ -56,27 +56,26 @@ public:
 
 RGB* colors = 0; // Array of color values
 
-__global__ void add(int* a, int* b, int* c)
+__global__ void mb_pix(Complex* cc, unsigned int* rr)
 {
   int index = threadIdx.x + blockIdx.x * blockDim.x;
-  c[index] = a[index] + b[index];
   unsigned int i = 0;
-
-  Complex Z_n(0, 0);
+  Complex Z_n(cc[index]);
 
   // itterate over the set
   for (; i < 2000; ++i) {
-    // if (Z_n > 2.0) {
-    // not in the mb
-    // }
+    Z_n = a;
+
+    if (Z_n.magnitude2() > 2.0) break;
   }
 
-  if (i < 1999) {
-    // part of the mb
-  } else {
-    // not part of the mb
-  }
+  rr[index] = i;
 
+  // if (i < 1999) {
+  //   // part of the mb
+  // } else {
+  //   // not part of the mb
+  // }
 }
 
 void InitializeColors(void)
@@ -194,23 +193,30 @@ int main(int argc, char** argv)
   // Calculate the interation counts
   // Grad students, pick the colors for the 0 .. 1999 iteration count pixels
 
-  // host copies of complex array
+  // host copy of complex array
   Complex* host_C;
-  // device copies of complex array
+  // device copy of complex array
   Complex* dev_C;
+  // host copy of interation array
+  unsigned int* host_r;
+  // device copy of iteration array
+  unsigned int* dev_r;
 
-  int size = WINDOW_DIM * WINDOW_DIM * sizeof(Complex);
+  unsigned int size_C = WINDOW_DIM * WINDOW_DIM * sizeof(Complex);
+  unsigned int size_r = WINDOW_DIM * WINDOW_DIM * sizeof(unsigned int);
 
   float realStep = (maxC.r - minC.r) / WINDOW_DIM;
   float imagStep = (maxC.i - minC.i) / WINDOW_DIM;
 
   // Allocate space for device copies of complex array
-  cudaMalloc((void**)&dev_C, size);
+  cudaMalloc((void**)&dev_C, size_C);
+  cudaMalloc((void**)&dev_r, size_r);
 
   // Allocate memory for the host complex array
-  host_C = (Complex*)malloc(size);
+  host_C = (Complex*)malloc(size_C);
+  host_r = (unsigned int*)malloc(size_r)
 
-  // initialize the complex number for each pixel
+           // initialize the complex number for each pixel
   for (size_t i = 0; i < WINDOW_DIM; ++i) {
     size_t row_id = WINDOW_DIM * i;
 
@@ -218,10 +224,26 @@ int main(int argc, char** argv)
       size_t ii = row_id + j;
 
       host_C[ii] = Complex(minC.r + (j * realStep), minC.i + (i * imagStep));
-      cout << "(" << host_C[ii].r << "," << host_C[ii].i << ")  ";
+      // cout << "(" << host_C[ii].r << "," << host_C[ii].i << ")  ";
     }
 
-    cout << endl << endl << endl << endl;
+    // cout << endl << endl << endl << endl;
+  }
+
+  // Copy inputs to device
+  cudaMemcpy(dev_C, &host_C, size_C, cudaMemcpyHostToDevice);
+  // Launch mb_pix() kernel on GPU
+  mb_pix <<<1, 1>>>(dev_C, dev_r);
+  // Copy result back to host
+  cudaMemcpy(&host_r, dev_r, size_r, cudaMemcpyDeviceToHost);
+  // Cleanup
+  cudaFree(dev_C);
+  cudaFree(dev_r);
+  free(host_C);
+
+  // show iteration array results
+  for (size_t i = 0; i < WINDOW_DIM * WINDOW_DIM; ++i) {
+    cout << host_r[i] << "\t";
   }
 
   // InitializeColors();
