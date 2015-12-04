@@ -62,14 +62,13 @@ __global__ void add(int* a, int* b, int* c)
   c[index] = a[index] + b[index];
   unsigned int i = 0;
 
-  Complex();
-  Z_n = 0;
+  Complex Z_n(0,0);
 
   // itterate over the set
   for (; i < 2000; ++i) {
-    if (Z_n > 2.0) {
+   // if (Z_n > 2.0) {
       // not in the mb
-    }
+   // }
   }
 
   if (i < 1999) {
