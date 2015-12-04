@@ -27,13 +27,11 @@ static const size_t WINDOW_DIM = 512;
 static const size_t MAX_IT = 2000;
 static const std::string WINDOW_BASENAME = "Mandelbrot";
 
-size_t cii = 0;
-
 // Initial screen coordinates, both host and device.
 Complex minC(-2.0, -1.2);
 Complex maxC(1.0, 1.8);
 Complex* dev_minC;
-Complex* dev_maxC;
+// Complex* dev_maxC;
 
 // Define the RGB Class
 class RGB
@@ -61,14 +59,13 @@ __global__ void mb_pix(Complex* cc, unsigned int* rr)
   // itterate over the set
   for (; i < 2000; ++i) {
     Z_nxt = (Z_prev * Z_prev) + Z_init;
-
     if (Z_nxt.magnitude2() > 2.0) break;
-
     Z_prev = Z_nxt;
   }
 
   rr[index] = i;
 }
+
 
 void InitializeColors(void)
 {
@@ -95,7 +92,7 @@ void MouseCB(int button, int state, int x, int y)\
 {
   cout << "Mouse event:\tbutton=" << button
   << "\tstate=" << state << "\tlocation=(" << x << "," << y << ")" << endl;
-  glutPostRedisplay(); // repaint the window
+  // glutPostRedisplay(); // repaint the window
 
   // Possible buttons - left button is only guaranteed button to exist on a system
   // GLUT_LEFT_BUTTON = 0
@@ -118,7 +115,7 @@ void MousePassiveCB(int x, int y)
   sprintf(buf, "(%u,%u)", x, y);
   std::string newWinName = WINDOW_BASENAME + "\t" + buf;
   glutSetWindowTitle(newWinName.c_str());
-  glutPostRedisplay();
+  // glutPostRedisplay();
 }
 
 // callback for display
@@ -143,18 +140,6 @@ void DisplayCB(void)
 
   glEnd();  // done drawing
   glutSwapBuffers();  // for double buffering
-}
-
-void Init(void)
-{
-  glViewport(0, 0, WINDOW_DIM, WINDOW_DIM);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glOrtho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
-  InitializeColors();
 }
 
 
@@ -222,23 +207,18 @@ int main(int argc, char** argv)
   // initialize the complex number for each pixel
   for (size_t i = 0; i < WINDOW_DIM; ++i) {
     size_t row_id = WINDOW_DIM * i;
-
     for (size_t j = 0; j < WINDOW_DIM; ++j) {
       size_t ii = row_id + j;
-
       host_C[ii] = Complex(minC.r + (j * realStep), minC.i + (i * imagStep));
-      // cout << "(" << host_C[ii].r << "," << host_C[ii].i << ")  ";
     }
-
-    // cout << endl << endl << endl << endl;
   }
 
   // Copy inputs to device
-  cudaMemcpy(dev_C, &host_C, size_C, cudaMemcpyHostToDevice);
+  cudaMemcpy(dev_C, host_C, size_C, cudaMemcpyHostToDevice);
   // Launch mb_pix() kernel on GPU
   mb_pix <<< WINDOW_DIM , WINDOW_DIM>>> (dev_C, dev_r);
   // Copy result back to host
-  cudaMemcpy(&host_r, dev_r, size_r, cudaMemcpyDeviceToHost);
+  cudaMemcpy(host_r, dev_r, size_r, cudaMemcpyDeviceToHost);
   // Cleanup
   cudaFree(dev_C);
   cudaFree(dev_r);
