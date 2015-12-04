@@ -27,12 +27,6 @@ static const size_t WINDOW_DIM = 512;
 static const size_t MAX_IT = 2000;
 static const std::string WINDOW_BASENAME = "Mandelbrot";
 
-// Mandlebrot start/end points for c
-// static const float x_i = -2.0;
-// static const float y_i = -1.2;
-// static const float x_f = 1.0;
-// static const float y_f = 1.8;
-
 size_t cii = 0;
 
 // Initial screen coordinates, both host and device.
@@ -61,8 +55,8 @@ __global__ void mb_pix(Complex* cc, unsigned int* rr)
   int index = threadIdx.x + blockIdx.x * blockDim.x;
   unsigned int i = 0;
   Complex Z_init(cc[index]);
-  Complex Z_prev(Z_n);
-  Complex Z_nxt;
+  Complex Z_prev(Z_init);
+  Complex Z_nxt(Z_init);
 
   // itterate over the set
   for (; i < 2000; ++i) {
