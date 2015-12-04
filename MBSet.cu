@@ -27,6 +27,12 @@ static const size_t WINDOW_DIM = 512;
 static const size_t MAX_IT = 2000;
 static const std::string WINDOW_BASENAME = "Mandelbrot";
 
+// Mandlebrot start/end points for c
+// static const float x_i = -2.0;
+// static const float y_i = -1.2;
+// static const float x_f = 1.0;
+// static const float y_f = 1.8;
+
 size_t cii = 0;
 
 // Initial screen coordinates, both host and device.
@@ -50,21 +56,41 @@ public:
 
 RGB* colors = 0; // Array of color values
 
-// Define and implement the GPU addition function
-__global__ void add(int *a, int *b, int *c)
+__global__ void add(int* a, int* b, int* c)
 {
-  *c = *a + *b;
+  int index = threadIdx.x + blockIdx.x * blockDim.x;
+  c[index] = a[index] + b[index];
+  unsigned int i = 0;
+
+  Complex();
+  Z_n = 0;
+
+  // itterate over the set
+  for (; i < 2000; ++i) {
+    if (Z_n > 2.0) {
+      // not in the mb
+    }
+  }
+
+  if (i < 1999) {
+    // part of the mb
+  } else {
+    // not part of the mb
+  }
+
 }
 
 void InitializeColors(void)
 {
   colors = new RGB[MAX_IT + 1];
+
   for (size_t i = 0; i < MAX_IT; ++i) {
     if (i < 5)
       colors[i] = RGB(1, 1, 1);
     else
       colors[i] = RGB(drand48(), drand48(), drand48());
   }
+
   colors[MAX_IT] = RGB(); // black
 }
 
@@ -117,15 +143,19 @@ void DisplayCB(void)
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glBegin(GL_POINTS); // single pixel mode
+
   for (size_t x = 0; x < WINDOW_DIM; ++x) {
     RGB cc = RGB(rand() % 255, rand() % 255, rand() % 255);
     glColor4ub(cc.r, cc.g, cc.b, 255);
+
     for (size_t y = 0; y < WINDOW_DIM; ++y)
       glVertex2d(x, y);
   }
+
   glEnd();  // done drawing
   glutSwapBuffers();  // for double buffering
 }
+
 
 void Init(void)
 {
@@ -164,6 +194,36 @@ int main(int argc, char** argv)
 
   // Calculate the interation counts
   // Grad students, pick the colors for the 0 .. 1999 iteration count pixels
+
+  // host copies of complex array
+  Complex* host_C;
+  // device copies of complex array
+  Complex* dev_C;
+
+  int size = WINDOW_DIM * WINDOW_DIM * sizeof(Complex);
+
+  float realStep = (maxC.r - minC.r) / WINDOW_DIM;
+  float imagStep = (maxC.i - minC.i) / WINDOW_DIM;
+
+  // initialize the complex number for each pixel
+  for (size_t i = 0; i < WINDOW_DIM; ++i) {
+    size_t row_id = WINDOW_DIM * i;
+
+    for (size_t j = 0; j < WINDOW_DIM; ++j) {
+      size_t ii = row_id + j;
+
+      host_C[ii] = Complex(minC.r + (j * realStep), minC.i + (i * imagStep));
+      cout << host_C[ii].r << "" << host_C[ii].i << " ";
+    }
+
+    cout << endl;
+  }
+
+  // Allocate space for device copies of complex array
+  cudaMalloc((void**)&dev_C, size);
+
+  // Allocate memory for the host complex array
+  host_C = (Complex*)malloc(size);
 
   // InitializeColors();
   // This will callback the display, keyboard and mouse
