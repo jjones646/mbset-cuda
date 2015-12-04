@@ -214,7 +214,7 @@ int main(int argc, char** argv)
 
   // Allocate memory for the host complex array
   host_C = (Complex*)malloc(size_C);
-  host_r = (unsigned int*)malloc(size_r)
+  host_r = (unsigned int*)malloc(size_r);
 
            // initialize the complex number for each pixel
   for (size_t i = 0; i < WINDOW_DIM; ++i) {
