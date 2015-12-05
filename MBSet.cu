@@ -40,6 +40,15 @@ static const Complex minC_i(-2.0, -1.2);
 static const Complex maxC_i(1.0, 1.8);
 
 
+// Forward function declarations
+void InitializeColors();
+double complex2pixstep_i(const Complex&, const Complex&);
+double complex2pixstep_i(const Complex&, const Complex&);
+void pushWindow(const Complex&, const Complex&);
+void cord2complex(unsigned int, unsigned int, Complex*);
+void popWindow();
+
+
 // Define a class for tracking cursor position/click
 // states across the callback functions
 class cursorTrack
@@ -109,7 +118,7 @@ __global__ void mb_pix(Complex* cc, unsigned int* rr)
 
 // Generate a random array of colors that we will index from the
 // number of iterations for each pixel of the mandlebrot
-void InitializeColors(void)
+void InitializeColors()
 {
     colors = new RGB[MAX_IT + 1];
     for (size_t i = 0; i < MAX_IT; ++i) {
@@ -152,7 +161,7 @@ void KeyboardCB(unsigned char key, int x, int y)
     switch (key) {
     case 'B':
     case 'b':
-        cout << "hey!" << endl;
+        popWindow();
         break;
 
     default:
@@ -206,12 +215,13 @@ void MouseCB(int button, int state, int x, int y)
             // if the selected area is above our threshold, assume the
             // user meant to select a region to zoom in.
             area = views.top().curs.sel_area();
-            // if (area > MIN_AREA_TO_ZOOM) {
-            if (1) {
+            if (area > MIN_AREA_TO_ZOOM) {
+                // if (1) {
                 Complex p1(0, 0);
                 Complex p2(0, 0);
                 cord2complex(views.top().curs.x, views.top().curs.y, &p1);
                 cord2complex(views.top().curs.x_sel, views.top().curs.y_sel, &p2);
+                pushWindow(p1, p2);
 
                 cout << "--  p1:\t\t(" << p1.r << "," << p1.i << ")" << endl;
                 cout << "--  p2:\t\t(" << p2.r << "," << p2.i << ")" << endl;
