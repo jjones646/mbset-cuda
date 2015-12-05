@@ -423,12 +423,7 @@ void pushWindow(const Complex& p1, const Complex& p2)
     // construct a new view object
     view v;
     v.buf = (unsigned int*)malloc(size_r);
-    // determine the min/max points for the new set
-    // float min_re = min(p1.r, p2.r);
-    // float min_im = min(p1.i, p2.i);
-    // float max_re = max(p1.r, p2.r);
-    // float max_im = max(p1.i, p2.i);
-    // create complex objects with these found min/max points
+    // create complex objects with the correct min/max points of each
     v.minC = new Complex(min(p1.r, p2.r), min(p1.i, p2.i));
     v.maxC = new Complex(max(p1.r, p2.r), max(p1.i, p2.i));
     // place it on our stack
