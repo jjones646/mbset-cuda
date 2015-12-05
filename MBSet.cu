@@ -149,8 +149,6 @@ void cord2complex(unsigned int x, unsigned int y, Complex* c)
     Complex maxx(views.top().maxC->r, views.top().maxC->i);
     double re_step = complex2pixstep_r(minn, maxx);
     double im_step = complex2pixstep_i(minn, maxx);
-    // float re_o = min(views.top().minC->r, views.top().maxC->r);
-    // float im_o = min(views.top().minC->i, views.top().maxC->i);
     *c = Complex(views.top().minC->r + (x * re_step), views.top().minC->i + (y * im_step));
 }
 
@@ -283,6 +281,19 @@ void MousePassiveCB(int x, int y)
 // callback when the mouse moves within the window WITH a buttom press
 void MouseActiveCB(int x, int y)
 {
+    double m_x = static_cast<double>(x - views.top().curs.x);
+    double m_y = static_cast<double>(y - views.top().curs.y);
+    float m = static_cast<float>(m_y / m_x);
+
+    if (abs(m) != 1.0) {
+        int m_fix = m >= 0 ? 1 : -1;
+        int b = static_cast<int>(views.top().curs.y - (m_fix * views.top().curs.x));
+        y = m_fix * x + b;
+        cout << "--  equation:\t" << y << " = " << m_fix << " x " << x << " + " << b << endl;
+    } else {
+        cout << "--  square selected!" << endl;
+    }
+
     // set the selection cursor position when we're holding down a button
     views.top().curs.x_sel = x;
     views.top().curs.y_sel = y;
@@ -407,15 +418,19 @@ void computeMB(const Complex& min, const Complex& max, unsigned int* res)
 
 // Push a new window computation onto a stack holding all previous
 // window views
-void pushWindow(const Complex& min, const Complex& max)
+void pushWindow(const Complex& p1, const Complex& p2)
 {
     // construct a new view object
     view v;
     v.buf = (unsigned int*)malloc(size_r);
-    v.minC = new Complex(min.r, min.i);
-    v.maxC = new Complex(max.r, max.i);
-    // v.origin_min = min(minC_i->r, max->r);
-    // v.origin_max = min(minC_i->i, maxC_i->i);
+    // determine the min/max points for the new set
+    // float min_re = min(p1.r, p2.r);
+    // float min_im = min(p1.i, p2.i);
+    // float max_re = max(p1.r, p2.r);
+    // float max_im = max(p1.i, p2.i);
+    // create complex objects with these found min/max points
+    v.minC = new Complex(min(p1.r, p2.r), min(p1.i, p2.i));
+    v.maxC = new Complex(max(p1.r, p2.r), max(p1.i, p2.i));
     // place it on our stack
     views.push(v);
     // now, compute it
