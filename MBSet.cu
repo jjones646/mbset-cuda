@@ -5,7 +5,7 @@
  *
  * Purpose:  This program displays Mandelbrot set using the GPU via CUDA and
  * OpenGL immediate mode.
- * 
+ *
  * Jonathan Jones
  *
  */
@@ -20,12 +20,16 @@
 
 #include "Complex.cu"
 
+
 using namespace std;
+
 
 // Size of window in pixels, both width and height
 static const size_t WINDOW_DIM = 512;
 // Maximum Iterations
 static const size_t MAX_IT = 2000;
+// Threshold for detecting a zoom selection
+static const unsigned int MIN_AREA_TO_ZOOM = WINDOW_DIM;
 // The name of the OpenGL window
 static const std::string WINDOW_BASENAME = "Mandelbrot";
 // Constants that we use for calculating the buffer areas
@@ -43,6 +47,9 @@ class cursorTrack
 public:
     cursorTrack()
         : x(0), y(0), x_sel(0), y_sel(0), sel_en(false) {}
+    int sel_area() {
+        return abs(x - x_sel) * abs(y - y_sel);
+    }
     GLint x, y, x_sel, y_sel;
     bool sel_en;
 };
@@ -58,6 +65,8 @@ public:
     Complex* minC;
     Complex* maxC;
     unsigned int* buf;
+    float origin_re;
+    float origin_im;
 };
 
 
@@ -79,7 +88,7 @@ std::stack<view> views;
 RGB* colors = 0; // Array of color values
 
 
-// The cuda kernel
+// The CUDA kernel that handles all parallel pixel computations
 __global__ void mb_pix(Complex* cc, unsigned int* rr)
 {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
@@ -113,6 +122,30 @@ void InitializeColors(void)
 }
 
 
+// Returns the step value for mapping a pair of complex
+// numbers evenly across the window space.
+double complex2pixstep_i(const Complex& min, const Complex& max)
+{
+    return (max.i - min.i) / WINDOW_DIM;
+}
+double complex2pixstep_r(const Complex& min, const Complex& max)
+{
+    return (max.r - min.r) / WINDOW_DIM;
+}
+
+
+void cord2complex(unsigned int x, unsigned int y, Complex* c)
+{
+    Complex minn(views.top().minC->r, views.top().minC->i);
+    Complex maxx(views.top().maxC->r, views.top().maxC->i);
+    double re_step = complex2pixstep_r(minn, maxx);
+    double im_step = complex2pixstep_i(minn, maxx);
+    // float re_o = min(views.top().minC->r, views.top().maxC->r);
+    // float im_o = min(views.top().minC->i, views.top().maxC->i);
+    *c = Complex((x * re_step),  (y * im_step));
+}
+
+
 // callback for keypress - (x,y) coordinate of mouse also given for cb routine
 void KeyboardCB(unsigned char key, int x, int y)
 {
@@ -133,6 +166,8 @@ void KeyboardCB(unsigned char key, int x, int y)
 // callback for mouse click
 void MouseCB(int button, int state, int x, int y)
 {
+    unsigned int area = 0;
+
     if (state == GLUT_DOWN) {
         switch (button) {
         case GLUT_LEFT_BUTTON:
@@ -145,6 +180,22 @@ void MouseCB(int button, int state, int x, int y)
         case GLUT_RIGHT_BUTTON:
             break;
 
+        case 3:
+            // scroll up
+            break;
+
+        case 4:
+            // scroll down
+            break;
+
+        case 7:
+            // back click
+            break;
+
+        case 8:
+            // forward click
+            break;
+
         default:
             break;
         }
@@ -152,6 +203,18 @@ void MouseCB(int button, int state, int x, int y)
         switch (button) {
         case GLUT_LEFT_BUTTON:
             views.top().curs.sel_en = false;
+            // if the selected area is above our threshold, assume the
+            // user meant to select a region to zoom in.
+            area = views.top().curs.sel_area();
+            if (area > MIN_AREA_TO_ZOOM) {
+                cout << "--  area: " << area << endl;
+                Complex p1(0, 0);
+                Complex p2(0, 0);
+                cord2complex(views.top().curs.x, views.top().curs.y, &p1);
+                cord2complex(views.top().curs.x_sel, views.top().curs.y_sel, &p2);
+                cout << "Start Point:\tre: " << p1.r << "\tim: " << p1.i << endl;
+                cout << "End Point:\tre: " << p2.r << "\tim: " << p2.i << endl;
+            }
             break;
 
         case GLUT_MIDDLE_BUTTON:
@@ -160,18 +223,31 @@ void MouseCB(int button, int state, int x, int y)
         case GLUT_RIGHT_BUTTON:
             break;
 
+        case 3:
+            // scroll up
+            break;
+
+        case 4:
+            // scroll down
+            break;
+
+        case 7:
+            // back click
+            break;
+
+        case 8:
+            // forward click
+            break;
+
         default:
             break;
         }
-
+        // update our current cross-hairs only
+        // when a button is released
         views.top().curs.x = x;
         views.top().curs.y = y;
         glutPostRedisplay();
     }
-    // scroll up = 3
-    // scroll down = 4
-    // back click = 7
-    // forward click = 8
 }
 
 
@@ -222,6 +298,7 @@ void DisplayCB(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // setup for a new display
     DisplayReset();
+
     // draw in the mandlebrot
     glBegin(GL_POINTS); // single pixel mode
     for (size_t y = 0; y < WINDOW_DIM; ++y) {
@@ -233,8 +310,10 @@ void DisplayCB(void)
             glVertex2i(x, y);
         }
     }
-    glEnd();  // done drawing
+    glEnd();  // done drawing pixels for mandlebrot
 
+    // when we click & drag the cursor, make the overlaid
+    // graphics slightly transparent
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // draw cross-hair lines over the window
@@ -276,18 +355,6 @@ void Init(void)
 }
 
 
-// Returns the step value for mapping a pair of complex
-// numbers evenly across the window space.
-double map2complex_i(const Complex& min, const Complex& max)
-{
-    return (max.i - min.i) / WINDOW_DIM;
-}
-double map2complex_r(const Complex& min, const Complex& max)
-{
-    return (max.r - min.r) / WINDOW_DIM;
-}
-
-
 // Compute the Mandelbrot within the region between
 // the given complex numbers
 void computeMB(const Complex& min, const Complex& max, unsigned int* res)
@@ -309,7 +376,7 @@ void computeMB(const Complex& min, const Complex& max, unsigned int* res)
         size_t row_id = WINDOW_DIM * i;
         for (size_t j = 0; j < WINDOW_DIM; ++j) {
             size_t ii = row_id + j;
-            host_C[ii] = Complex(min.r + (j * map2complex_r(min, max)), min.i + (i * map2complex_i(min, max)));
+            host_C[ii] = Complex(min.r + (j * complex2pixstep_r(min, max)), min.i + (i * complex2pixstep_i(min, max)));
         }
     }
 
@@ -335,6 +402,8 @@ void pushWindow(const Complex& min, const Complex& max)
     v.buf = (unsigned int*)malloc(size_r);
     v.minC = new Complex(min.r, min.i);
     v.maxC = new Complex(max.r, max.i);
+    v.origin_re = min(minC_i.r, maxC_i.r);
+    v.origin_im = min(minC_i.i, maxC_i.i);
     // place it on our stack
     views.push(v);
     // now, compute it
@@ -342,7 +411,7 @@ void pushWindow(const Complex& min, const Complex& max)
 }
 
 
-// Remove the current window view from our stack, and 
+// Remove the current window view from our stack, and
 // clean up all previsouly allocated memory in the process.
 void popWindow()
 {
