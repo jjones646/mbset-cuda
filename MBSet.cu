@@ -142,7 +142,7 @@ void cord2complex(unsigned int x, unsigned int y, Complex* c)
     double im_step = complex2pixstep_i(minn, maxx);
     // float re_o = min(views.top().minC->r, views.top().maxC->r);
     // float im_o = min(views.top().minC->i, views.top().maxC->i);
-    *c = Complex((x * re_step),  (y * im_step));
+    *c = Complex(views.top().minC->r + (x * re_step), views.top().minC->i + (y * im_step));
 }
 
 
@@ -206,14 +206,16 @@ void MouseCB(int button, int state, int x, int y)
             // if the selected area is above our threshold, assume the
             // user meant to select a region to zoom in.
             area = views.top().curs.sel_area();
-            if (area > MIN_AREA_TO_ZOOM) {
-                cout << "--  area: " << area << endl;
+            // if (area > MIN_AREA_TO_ZOOM) {
+            if (1) {
                 Complex p1(0, 0);
                 Complex p2(0, 0);
                 cord2complex(views.top().curs.x, views.top().curs.y, &p1);
                 cord2complex(views.top().curs.x_sel, views.top().curs.y_sel, &p2);
-                cout << "Start Point:\tre: " << p1.r << "\tim: " << p1.i << endl;
-                cout << "End Point:\tre: " << p2.r << "\tim: " << p2.i << endl;
+
+                cout << "--  p1:\t\t(" << p1.r << "," << p1.i << ")" << endl;
+                cout << "--  p2:\t\t(" << p2.r << "," << p2.i << ")" << endl;
+                cout << "--  area:\t" << area << endl;
             }
             break;
 
@@ -402,8 +404,8 @@ void pushWindow(const Complex& min, const Complex& max)
     v.buf = (unsigned int*)malloc(size_r);
     v.minC = new Complex(min.r, min.i);
     v.maxC = new Complex(max.r, max.i);
-    v.origin_re = min(minC_i.r, maxC_i.r);
-    v.origin_im = min(minC_i.i, maxC_i.i);
+    // v.origin_min = min(minC_i->r, max->r);
+    // v.origin_max = min(minC_i->i, maxC_i->i);
     // place it on our stack
     views.push(v);
     // now, compute it
