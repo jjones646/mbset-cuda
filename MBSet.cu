@@ -44,9 +44,17 @@ static const Complex maxC_i(1.0, 1.8);
 void InitializeColors();
 double complex2pixstep_i(const Complex&, const Complex&);
 double complex2pixstep_i(const Complex&, const Complex&);
-void pushWindow(const Complex&, const Complex&);
 void cord2complex(unsigned int, unsigned int, Complex*);
+void pushWindow(const Complex&, const Complex&);
 void popWindow();
+void DisplayReset();
+void Init();
+// callback function forward declerations
+void DisplayCB();
+void MouseCB(int, int, int, int);
+void MouseActiveCB(int, int);
+void MousePassiveCB(int, int);
+void KeyboardCB(unsigned char, int, int);
 
 
 // Define a class for tracking cursor position/click
@@ -84,10 +92,10 @@ class RGB
 {
 public:
     RGB()
-        : r(0), g(0), b(0) {}
-    RGB(double r0, double g0, double b0)
-        : r(r0), g(g0), b(b0) {}
-    double r, g, b;
+        : r(0), g(0), b(0), t(255) {}
+    RGB(double r0, double g0, double b0, double t0)
+        : r(r0), g(g0), b(b0), t(t0) {}
+    double r, g, b, t;
 };
 
 
@@ -122,10 +130,30 @@ void InitializeColors()
 {
     colors = new RGB[MAX_IT + 1];
     for (size_t i = 0; i < MAX_IT; ++i) {
-        if (i < 5)
-            colors[i] = RGB(1, 1, 1);
-        else
-            colors[i] = RGB(drand48(), drand48(), drand48());
+        if (i < 1) {
+            colors[i] = RGB(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else {
+            double trans = 1.0f;
+            double r, g, b;
+            if (i < 5) {
+                r = 0.0f;
+            } else {
+                r = 1.0 - drand48();
+            }
+            if (i < 10) {
+                g = 0.0f;
+            } else {
+                g = 0.6 - static_cast<double>(i) / (4.0f * MAX_IT);
+            }
+            if (i < 20) {
+                b = 1.0;
+            } else {
+                b = drand48();
+            }
+            // cout << "r: " << r << ", g: " << g << ", b: " << b << ", t:" << trans << endl;
+            colors[i] = RGB(r, g, b, trans);
+        }
     }
     colors[MAX_IT] = RGB(); // black
 }
@@ -142,7 +170,7 @@ double complex2pixstep_r(const Complex& min, const Complex& max)
     return (max.r - min.r) / WINDOW_DIM;
 }
 
-
+// convert a set of coordinates into a complex point in the mandlebrot set
 void cord2complex(unsigned int x, unsigned int y, Complex* c)
 {
     Complex minn(views.top().minC->r, views.top().minC->i);
@@ -159,6 +187,7 @@ void KeyboardCB(unsigned char key, int x, int y)
     switch (key) {
     case 'B':
     case 'b':
+        // go back 1 view
         popWindow();
         break;
 
@@ -181,28 +210,6 @@ void MouseCB(int button, int state, int x, int y)
             views.top().curs.sel_en = true;
             break;
 
-        case GLUT_MIDDLE_BUTTON:
-            break;
-
-        case GLUT_RIGHT_BUTTON:
-            break;
-
-        case 3:
-            // scroll up
-            break;
-
-        case 4:
-            // scroll down
-            break;
-
-        case 7:
-            // back click
-            break;
-
-        case 8:
-            // forward click
-            break;
-
         default:
             break;
         }
@@ -223,30 +230,8 @@ void MouseCB(int button, int state, int x, int y)
 
                 cout << "--  p1:\t\t(" << p1.r << "," << p1.i << ")" << endl;
                 cout << "--  p2:\t\t(" << p2.r << "," << p2.i << ")" << endl;
-                cout << "--  area:\t" << area << endl;
+                cout << "--  area:\t" << area << " px." << endl;
             }
-            break;
-
-        case GLUT_MIDDLE_BUTTON:
-            break;
-
-        case GLUT_RIGHT_BUTTON:
-            break;
-
-        case 3:
-            // scroll up
-            break;
-
-        case 4:
-            // scroll down
-            break;
-
-        case 7:
-            // back click
-            break;
-
-        case 8:
-            // forward click
             break;
 
         default:
@@ -264,15 +249,9 @@ void MouseCB(int button, int state, int x, int y)
 // callback when the mouse moves within the window WITHOUT a buttom press
 void MousePassiveCB(int x, int y)
 {
-    char buf[12];
-    sprintf(buf, "(%u,%u)", x, y);
-    std::string newWinName = WINDOW_BASENAME + "\t" + buf;
-    glutSetWindowTitle(newWinName.c_str());
-
     // always update our current position if nothing is being selected
     views.top().curs.x = x;
     views.top().curs.y = y;
-
     // repaint the window
     glutPostRedisplay();
 }
@@ -285,42 +264,35 @@ void MouseActiveCB(int x, int y)
     double m_y = static_cast<double>(y - views.top().curs.y);
     float m = static_cast<float>(m_y / m_x);
 
+    // fixup the y value if the selection is not a square
     if (abs(m) != 1.0) {
         int m_fix = m >= 0 ? 1 : -1;
         int b = static_cast<int>(views.top().curs.y - (m_fix * views.top().curs.x));
         y = m_fix * x + b;
-        cout << "--  equation:\t" << y << " = " << m_fix << " x " << x << " + " << b << endl;
-    } else {
-        cout << "--  square selected!" << endl;
     }
 
     // set the selection cursor position when we're holding down a button
     views.top().curs.x_sel = x;
     views.top().curs.y_sel = y;
-
     // repaint the window
     glutPostRedisplay();
 }
 
 
-// sets up the current view for drawing
-void DisplayReset(void)
-{
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-}
-
-
 // callback for display
-void DisplayCB(void)
+void DisplayCB()
 {
+    // init random num gen
+    srand48(time(NULL));
     // clear all
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // setup for a new display
     DisplayReset();
+
+    // when we click & drag the cursor, make the overlaid
+    // graphics slightly transparent
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // draw in the mandlebrot
     glBegin(GL_POINTS); // single pixel mode
@@ -329,16 +301,12 @@ void DisplayCB(void)
         for (size_t x = 0; x < WINDOW_DIM; ++x) {
             unsigned int cii = views.top().buf[row_id + x];
             RGB cc = colors[cii];
-            glColor4f(cc.r, cc.g, cc.b, 255);
+            glColor4f(cc.r, cc.g, cc.b, cc.t);
             glVertex2i(x, y);
         }
     }
     glEnd();  // done drawing pixels for mandlebrot
 
-    // when we click & drag the cursor, make the overlaid
-    // graphics slightly transparent
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // draw cross-hair lines over the window
     glLineStipple(1, 0x003f);
     glColor4ub(170, 170, 170, 180);
@@ -367,8 +335,19 @@ void DisplayCB(void)
 }
 
 
+// sets up the current view for drawing
+void DisplayReset()
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+
 // Initialization function wrapper
-void Init(void)
+void Init()
 {
     glViewport(0, 0, WINDOW_DIM, WINDOW_DIM);
     glutSetCursor(GLUT_CURSOR_CROSSHAIR); // cause...why not?
@@ -459,6 +438,7 @@ int main(int argc, char** argv)
     // Initialize OPENGL
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glClearColor(0 , 0, 1, 1);
 
     // get our screen dimensions & set our window name depending on what are parameters are
     const size_t display_width = glutGet(GLUT_SCREEN_WIDTH);
@@ -474,9 +454,6 @@ int main(int argc, char** argv)
     glutPassiveMotionFunc(MousePassiveCB);
     glutMotionFunc(MouseActiveCB);
     Init();
-
-    // Calculate the interation counts
-    // Grad students, pick the colors for the 0 .. 1999 iteration count pixels
 
     // set our initial view, popping it as the first element of our stack
     pushWindow(minC_i, maxC_i);
