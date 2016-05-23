@@ -1,8 +1,8 @@
-# CC=/usr/local/cuda/bin/nvcc
-CC=/usr/local/cuda-7.0/bin/nvcc
+CC=/usr/local/cuda/bin/nvcc
+#CC=/usr/local/cuda-7.0/bin/nvcc
 LIBS= -lglut -lGL -lGLU
-# INCLUDES=-I./ -I/usr/include -I/usr/local/cuda/include/ 
-INCLUDES=-I./
+INCLUDES=-I./ -I/usr/include -I/usr/local/cuda/include
+# INCLUDES=-I./
 CCFLAGS= 
 OBJECTS= MBSet.o
 
