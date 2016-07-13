@@ -1,19 +1,18 @@
 CC=/usr/local/cuda/bin/nvcc
-#CC=/usr/local/cuda-7.0/bin/nvcc
 LIBS= -lglut -lGL -lGLU
-INCLUDES=-I./ -I/usr/include -I/usr/local/cuda/include
-# INCLUDES=-I./
-CCFLAGS= 
-OBJECTS= MBSet.o
+INCLUDES=-I/usr/include -I/usr/local/cuda/include
+OBJECTS= mbset.o
+CCFLAGS=
 
-# --- targets
-all:  MBSet
-MBSet:	$(OBJECTS)
-	$(CC) -o MBSet $(CCFLAGS) $(INCLUDES) $(OBJECTS) $(LIBS) 
+#######################################
 
-MBSet.o: MBSet.cu
-	$(CC) $(CCFLAGS) $(INCLUDES) -c MBSet.cu
+all: mbset
 
+mbset: $(OBJECTS)
+	$(CC) -o mbset $(CCFLAGS) $(INCLUDES) $(OBJECTS) $(LIBS) 
+
+mbset.o: mbset.cu
+	$(CC) $(CCFLAGS) $(INCLUDES) -c mbset.cu
 
 clean:
-	rm -f MBSet $(OBJECTS)
+	rm -f mbset $(OBJECTS)

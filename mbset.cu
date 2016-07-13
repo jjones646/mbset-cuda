@@ -1,5 +1,5 @@
 /*
- * File:   MBSet.cu
+ * File:   mbset.cu
  *
  * Created on December 4, 2015
  *
@@ -437,8 +437,8 @@ int main(int argc, char** argv)
 {
     // Initialize OPENGL
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glClearColor(0 , 0, 1, 1);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+    glClearColor(0, 0, 1, 1);
 
     // get our screen dimensions & set our window name depending on what are parameters are
     const size_t display_width = glutGet(GLUT_SCREEN_WIDTH);
@@ -448,12 +448,12 @@ int main(int argc, char** argv)
     glutCreateWindow(WINDOW_BASENAME.c_str());
 
     // set up the opengl callbacks for display, mouse and keyboard
+    Init();
     glutDisplayFunc(DisplayCB);
     glutKeyboardFunc(KeyboardCB);
     glutMouseFunc(MouseCB);
     glutPassiveMotionFunc(MousePassiveCB);
     glutMotionFunc(MouseActiveCB);
-    Init();
 
     // set our initial view, popping it as the first element of our stack
     pushWindow(minC_i, maxC_i);

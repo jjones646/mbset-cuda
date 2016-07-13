@@ -1,5 +1,4 @@
 Makefile
 HelloCuda
-MBSet
+mbset
 *.o
-*.sublime-workspace
